@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>글쓰기 사이트</title>
+    <style>
+        .edit1{
+            display: none;
+        }
+        .edit2{
+            display: none;
+        }
+        .edit3{
+            display: none;
+        }
+        .edit4{
+            display: none;
+        }
+        .text1{
+            display: none;
+        }
+        .text2{
+            display: none;
+        }
+        .icon-start-edit{
+            display: none;
+        }
+
+        .icon-delete{
+            display: none;
+        }
+
+        .icon-end-edit{
+            display: none;
+        }
+        .backbtn{
+            display: none;
+        }
+
+
+
+
+
+    </style>
+    <script>
+
+
+        $(document).ready(function () {
+            // HTML 문서를 로드할 때마다 실행합니다.
+            getMessages();
+
+
+
+        })
+
+        // 메모를 불러와서 보여줍니다.
+        function getMessages() {
+            // 1. 기존 메모 내용을 지웁니다.
+            $('#cards-box').empty();
+            // 2. 메모 목록을 불러와서 HTML로 붙입니다.
+            $.ajax({
+                type: 'GET',
+                url: '/api/board1s',
+                success: function (response) {
+                    for (let i = 0; i < response.length; i++) {
+                        let message = response[i];
+                        let id = message['id'];
+                        let username = message['username'];
+                        let contents = message['contents'];
+                        let modifiedAt = message['modifiedAt'];
+                        let myname = message['myname'];
+                        let title = message['title'];
+                        let pw = message['pw'];
+                        addHTML(id, username, contents, modifiedAt, myname, title, pw);
+                    }
+                }
+            })
+        }
+
+        // 메모 하나를 HTML로 만들어서 body 태그 내 원하는 곳에 붙입니다.
+        function addHTML(id, username, contents, modifiedAt, myname, title, pw) {
+            // 1. HTML 태그를 만듭니다.
+            let tempHtml = `<div class="${id}-card" id ="${id}-card">
+                                <!-- date/username 영역 -->
+                                    <div class="modifiedAt">
+                                    <div id="${id}-modifiedAt" class="text">
+                                        ${modifiedAt}
+                                    </div>
+                                    </div>
+                                    <div class="username">
+                                    <div id="${id}-username" class="text">
+                                        ${username}
+                                    </div>
+                                    </div>
+
+                                <!-- contents 조회/수정 영역-->
+                                <div class="myname">
+                                    <div id="${id}-myname" class="text">
+                                        ${myname}
+                                    </div>
+                                    <div id="${id}-editarea1" class="edit1">
+                                        <textarea id="${id}-textarea1" class="te-edit" name="" id="" cols="30" rows="5"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="title">
+                                    <div id="${id}-title" class="text">
+                                        <a href="#" onclick="editPost2('${id}')"> ${title}</a>
+                                    </div>
+                                    <div id="${id}-editarea2" class="edit2">
+                                        <textarea id="${id}-textarea2" class="te-edit" name="" id="" cols="30" rows="5"></textarea>
+                                    </div>
+                                </div>
+
+
+                                <div class="pw">
+                                    <div id="${id}-pw" class="text1">
+                                        ${pw}
+                                    </div>
+                                    <div id="${id}-editarea3" class="edit3">
+                                        <textarea id="${id}-textarea3" class="te-edit" name="" id="" cols="30" rows="5"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="contents">
+                                    <div id="${id}-contents" class="text2">
+                                        ${contents}
+                                    </div>
+                                    <div id="${id}-editarea4" class="edit4">
+                                        <textarea id="${id}-textarea4" class="te-edit" name="" id="" cols="30" rows="5"></textarea>
+                                    </div>
+                                </div>
+
+
+                                <!-- 버튼 영역-->
+                                <div class="footer">
+                                    <img id="${id}-edit" class="icon-start-edit" src="images/edit.png" alt="" onclick="editPost('${id}')">
+                                    <img id="${id}-delete" class="icon-delete" src="images/delete.png" alt="" onclick="deleteOne('${id}')">
+                                    <img id="${id}-submit" class="icon-end-edit" src="images/done.png" alt="" onclick="submitEdit('${id}')">
+                                    <button id="${id}-back" class ="backbtn" onclick="back('${id}')">뒤로가기</button>
+                                </div>
+
+                            </div>`;
+            // 2. #cards-box 에 HTML을 붙인다.
+            $('#cards-box').append(tempHtml);
+        }
+
+        function genRandomName(length) {
+            let result = '';
+            let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let charactersLength = characters.length;
+            for (let i = 0; i < length; i++) {
+                let number = Math.random() * charactersLength;
+                let index = Math.floor(number);
+                result += characters.charAt(index);
+            }
+            return result;
+        }
+        // 메모를 생성합니다.
+        function writePost() {
+            // 1. 작성한 메모를 불러옵니다.
+            let contents = $('#contents').val();
+            let myname = $('#myname').val();
+            let title = $('#title').val();
+            let pw = $('#pw').val();
+
+            // 2. 작성한 메모가 올바른지 isValidContents 함수를 통해 확인합니다.
+            if (isValidContents(contents) == false) {
+                return;
+            }
+            // 3. genRandomName 함수를 통해 익명의 username을 만듭니다.
+            let username = genRandomName(10);
+            // 4. 전달할 data JSON으로 만듭니다.
+            let data = {'username': username, 'contents': contents, 'myname': myname, 'title': title, 'pw': pw};
+            // 5. POST /api/boards 에 data를 전달합니다.
+            $.ajax({
+                type: "POST",
+                url: "/api/board1s",
+                contentType: "application/json", // JSON 형식으로 전달함을 알리기
+                data: JSON.stringify(data),
+                success: function (response) {
+                    alert('메시지가 성공적으로 작성되었습니다.');
+                    window.location.reload();
+                }
+            });
+        }
+
+
+
+        function editPost(id) {
+            if (test(id) == false) {
+                window.location.reload();
+            }
+            showEdits(id);
+            let contents = $(`#${id}-contents`).text().trim();
+            let pw = $(`#${id}-pw`).text().trim();
+            let title = $(`#${id}-title`).text().trim();
+            let myname = $(`#${id}-myname`).text().trim();
+            $(`#${id}-textarea4`).val(contents);
+            $(`#${id}-textarea3`).val(pw);
+            $(`#${id}-textarea2`).val(title);
+            $(`#${id}-textarea1`).val(myname);
+        }
+
+        function showEdits(id) {
+            $(`#${id}-editarea4`).show();
+            $(`#${id}-editarea3`).show();
+            $(`#${id}-editarea2`).show();
+            $(`#${id}-editarea1`).show();
+            $(`#${id}-submit`).show();
+            $(`#${id}-delete`).show();
+
+            $(`#${id}-contents`).hide();
+            $(`#${id}-edit`).hide();
+        }
+
+        function hideEdits(id) {
+            $(`#${id}-editarea`).hide();
+            $(`#${id}-submit`).hide();
+            $(`#${id}-delete`).hide();
+
+            $(`#${id}-contents`).show();
+            $(`#${id}-edit`).show();
+        }
+
+
+        // 메모를 수정합니다.
+        function submitEdit(id) {
+            // 1. 작성 대상 메모의 username과 contents 를 확인합니다.
+            let username = $(`#${id}-username`).text().trim();
+            let contents = $(`#${id}-textarea4`).val().trim();
+            let myname = $(`#${id}-textarea1`).val().trim();
+            let title = $(`#${id}-textarea2`).val().trim();
+            let pw = $(`#${id}-textarea3`).val().trim();
+
+            // 2. 작성한 메모가 올바른지 isValidContents 함수를 통해 확인합니다.
+            if (isValidContents(contents) == false) {
+                return;
+            }
+
+            // 3. 전달할 data JSON으로 만듭니다.
+            let data = {'username': username, 'contents': contents, 'myname': myname, 'title': title, 'pw': pw};
+
+            // 4. PUT /api/s/{id} 에 data를 전달합니다.
+            $.ajax({
+                type: "PUT",
+                url: `/api/board1s/${id}`,
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (response) {
+                    alert('메시지 변경에 성공하였습니다.');
+                    window.location.reload();
+                }
+            });
+        }
+
+        // 메모를 삭제합니다.
+
+        function deleteOne(id) {
+            if (test(id) == false) {
+                window.location.reload();
+            }
+            $.ajax({
+                type: "DELETE",
+                url: `/api/board1s/${id}`,
+                success: function (response) {
+                    alert('메시지 삭제에 성공하였습니다.');
+                    window.location.reload();
+                }
+            })
+        }
+
+        function isValidContents(contents) {
+            if (contents == '') {
+                alert('내용을 입력해주세요');
+                return false;
+            }
+            if (contents.trim().length > 140) {
+                alert('공백 포함 140자 이하로 입력해주세요');
+                return false;
+            }
+            return true;
+        }
+
+        function test(id) {
+            alert("pw를 입력하세요")
+            test = prompt("pw?")
+
+            let pw = $(`#${id}-pw`).text().trim();
+            if ( pw != test ){
+                alert("pw가 틀렸습니다")
+
+                return false;
+            }
+            alert("pw 확인 완료")
+            return true;
+        }
+
+
+        function editPost2(id) {
+
+
+            showEdits2(id);
+            let contents = $(`#${id}-contents`).text().trim();
+            let pw = $(`#${id}-pw`).text().trim();
+            let title = $(`#${id}-title`).text().trim();
+            let myname = $(`#${id}-myname`).text().trim();
+            $(`#${id}-textarea4`).val(contents);
+            $(`#${id}-textarea3`).val(pw);
+            $(`#${id}-textarea2`).val(title);
+            $(`#${id}-textarea1`).val(myname);
+        }
+
+        function showEdits2(id) {
+            $(`#${id}-pw`).show();
+            $(`#${id}-contents`).show();
+            $(`#${id}-edit`).show();
+            $(`#${id}-delete`).show();
+
+            $(`#${id}-back`).show();
+
+        }
+
+        function back(){
+            window.location.reload();
+        }
+    </script>
+</head>
+<body class = "body" id = "body">
+<div class = "write=box" id = "write-box">
+<p>작성자명</p>
+<input id = "myname" type="text" />
+<p>제목</p>
+<input id = "title" type="text" />
+<p>비밀번호</p>
+<input id = "pw" type="text" />
+<p>내용</p>
+<textarea id = "contents"></textarea>
+
+<button onclick="writePost()">글 올리기</button>
+</div>
+
+<div id="cards-box" class="area-read">
+    <div class="card">
+        <!-- date/username 영역 -->
+        <div class="metadata">
+            <div class="date">
+                October 10, 2020
+            </div>
+            <div id="1-username" class="username">
+                anonymous
+            </div>
+        </div>
+        <!-- contents 조회/수정 영역-->
+        <div class="contents">
+            <div id="1-contents" class="text">
+                dsafnkalfklewakflekelafkleajfkleafkldsankflenwaklfnekwlafneklwanfkelawnfkelanfkleanfklew
+            </div>
+            <div id="1-editarea" class="edit">
+                <textarea id="1-textarea4" class="te-edit" name="" id="" cols="30" rows="5"></textarea>
+            </div>
+        </div>
+        <!-- 버튼 영역-->
+        <div class="footer">
+            <img id="1-edit" onclick="editPost('1')" class="icon-start-edit" src="images/edit.png" alt="">
+            <img id="1-delete" onclick="deleteOne('1')" class="icon-delete" src="images/delete.png" alt="">
+            <img id="1-submit" onclick="submitEdit('1')" class="icon-end-edit" src="images/done.png" alt="">
+        </div>
+        <button id="1-back" class ="backbtn" onclick="back('1')">뒤로가기</button>
+    </div>
+</div>
+
+
+</body>
+</html>
